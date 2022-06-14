@@ -15,7 +15,7 @@ public class ChatPanelManager : MonoBehaviour
     private Sprite myHead;
     private Sprite otherHead;
 
-    private string chatName;
+    private string chatTitle;
  
     [SerializeField] 
     private float stepVertical; //上下两个气泡的垂直间隔
@@ -30,10 +30,10 @@ public class ChatPanelManager : MonoBehaviour
         lastPos = 0;
     }
 
-    public void SetName(string name)
+    public void SetTitle(string title)
     {
-        chatName = name;
-        transform.Find("Header").GetComponentInChildren<Text>().text = chatName;
+        chatTitle = title;
+        transform.Find("Header").GetComponentInChildren<Text>().text = chatTitle;
     }
 
     public void SetHead(Sprite head, bool isMy)
