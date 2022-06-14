@@ -11,6 +11,9 @@ public class ChatPanelManager : MonoBehaviour
     private Scrollbar scrollbar;
     
     private RectTransform content;
+
+    private Sprite myHead;
+    private Sprite otherHead;
  
     [SerializeField] 
     private float stepVertical; //上下两个气泡的垂直间隔
@@ -24,13 +27,35 @@ public class ChatPanelManager : MonoBehaviour
         content = transform.Find("Viewport").Find("Content").GetComponent<RectTransform>();
         lastPos = 0;
     }
+
+    public void SetHead(Sprite head, bool isMy)
+    {
+        if(isMy)
+        {
+            myHead = head;
+        }
+        else
+        {
+            otherHead = head;
+        }
+    }
  
     public void AddBubble(string message, bool isMy)
     {
         GameObject newBubble = isMy ? Instantiate(rightBubblePrefab, content) : Instantiate(leftBubblePrefab, content);
         //设置气泡内容
-        Text text = newBubble.GetComponentInChildren<Text>();
-        text.text = message;
+        Text msgText = newBubble.transform.Find("Bubble").GetComponentInChildren<Text>();
+        msgText.text = message;
+
+        Image bubbleImage = newBubble.transform.Find("Head").GetComponent<Image>();
+        if(isMy)
+        {
+            bubbleImage.sprite = myHead;
+        }
+        else
+        {
+            bubbleImage.sprite = otherHead;
+        }
 
         RectTransform rect = newBubble.GetComponent<RectTransform>();
         rect.anchoredPosition = new Vector2(0, lastPos);
@@ -43,8 +68,6 @@ public class ChatPanelManager : MonoBehaviour
         yield return new WaitForEndOfFrame();
         Image bubbleImage = bubble.transform.Find("Bubble").GetComponentInChildren<Image>();
         RectTransform rect = bubbleImage.GetComponent<RectTransform>();
-        LayoutRebuilder.ForceRebuildLayoutImmediate(rect);
-        Debug.Log(rect.sizeDelta.y);
 
         lastPos -= rect.sizeDelta.y + stepVertical;
 

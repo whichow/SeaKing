@@ -5,11 +5,16 @@ using UnityEngine;
 public class ChatDemo : MonoBehaviour
 {
     public ChatPanelManager chat;
+    public Sprite head1;
+    public Sprite head2;
+
     private int count;
     private List<string> message = new List<string>();
     void Start()
     {
         chat.Init();
+        chat.SetHead(head1, true);
+        chat.SetHead(head2, false);
         message.Add("永恒之星");
         message.Add("永恒之星永恒之星");
         message.Add("永恒之星永恒之星永恒之星");
