@@ -14,6 +14,8 @@ public class ChatPanelManager : MonoBehaviour
 
     private Sprite myHead;
     private Sprite otherHead;
+
+    private string chatName;
  
     [SerializeField] 
     private float stepVertical; //上下两个气泡的垂直间隔
@@ -26,6 +28,12 @@ public class ChatPanelManager : MonoBehaviour
         scrollbar = GetComponentInChildren<Scrollbar>();
         content = transform.Find("Viewport").Find("Content").GetComponent<RectTransform>();
         lastPos = 0;
+    }
+
+    public void SetName(string name)
+    {
+        chatName = name;
+        transform.Find("Header").GetComponentInChildren<Text>().text = chatName;
     }
 
     public void SetHead(Sprite head, bool isMy)

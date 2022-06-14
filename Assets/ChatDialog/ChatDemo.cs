@@ -15,6 +15,7 @@ public class ChatDemo : MonoBehaviour
         chat.Init();
         chat.SetHead(head1, true);
         chat.SetHead(head2, false);
+        chat.SetName("慢慢来");
         message.Add("永恒之星");
         message.Add("永恒之星永恒之星");
         message.Add("永恒之星永恒之星永恒之星");
