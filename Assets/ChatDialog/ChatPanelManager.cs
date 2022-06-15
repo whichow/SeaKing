@@ -11,11 +11,14 @@ public class ChatPanelManager : MonoBehaviour
     private Scrollbar scrollbar;
     
     private RectTransform content;
+    private Text sendField;
 
     private Sprite myHead;
     private Sprite otherHead;
 
     private string chatTitle;
+
+    private string toSendMessage;
  
     [SerializeField] 
     private float stepVertical; //上下两个气泡的垂直间隔
@@ -27,6 +30,7 @@ public class ChatPanelManager : MonoBehaviour
         scrollRect = GetComponentInChildren<ScrollRect>();
         scrollbar = GetComponentInChildren<Scrollbar>();
         content = transform.Find("Viewport").Find("Content").GetComponent<RectTransform>();
+        sendField = transform.Find("Footer/InputField/Text").GetComponent<Text>();
         lastPos = 0;
     }
 
@@ -46,6 +50,18 @@ public class ChatPanelManager : MonoBehaviour
         {
             otherHead = head;
         }
+    }
+
+    public void AddMessage(string message)
+    {
+        toSendMessage = message;
+        sendField.text = message;
+    }
+
+    public void SendMessage()
+    {
+        AddBubble(toSendMessage, true);
+        sendField.text = null;
     }
  
     public void AddBubble(string message, bool isMy)
