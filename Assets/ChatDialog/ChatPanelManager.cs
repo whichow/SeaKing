@@ -11,7 +11,8 @@ public class ChatPanelManager : MonoBehaviour
     private Scrollbar scrollbar;
     
     private RectTransform content;
-    private Text sendField;
+    private Text sendFieldText;
+    private Text titleText;
 
     private Sprite myHead;
     private Sprite otherHead;
@@ -29,15 +30,16 @@ public class ChatPanelManager : MonoBehaviour
     {
         scrollRect = GetComponentInChildren<ScrollRect>();
         scrollbar = GetComponentInChildren<Scrollbar>();
-        content = transform.Find("Viewport").Find("Content").GetComponent<RectTransform>();
-        sendField = transform.Find("Footer/InputField/Text").GetComponent<Text>();
+        content = transform.Find("Viewport/Content").GetComponent<RectTransform>();
+        titleText = transform.Find("Header/Text").GetComponent<Text>();
+        sendFieldText = transform.Find("Footer/InputField/Text").GetComponent<Text>();
         lastPos = 0;
     }
 
     public void SetTitle(string title)
     {
         chatTitle = title;
-        transform.Find("Header").GetComponentInChildren<Text>().text = chatTitle;
+        titleText.text = chatTitle;
     }
 
     public void SetHead(Sprite head, bool isMy)
@@ -55,13 +57,13 @@ public class ChatPanelManager : MonoBehaviour
     public void AddMessage(string message)
     {
         toSendMessage = message;
-        sendField.text = message;
+        sendFieldText.text = message;
     }
 
     public void SendMessage()
     {
         AddBubble(toSendMessage, true);
-        sendField.text = null;
+        sendFieldText.text = null;
     }
  
     public void AddBubble(string message, bool isMy)
