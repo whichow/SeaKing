@@ -10,6 +10,7 @@ public class ChatDemo : MonoBehaviour
 
     private int count;
     private List<string> message = new List<string>();
+    
     void Start()
     {
         chat.Init();
