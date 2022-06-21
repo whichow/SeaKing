@@ -7,9 +7,6 @@ public class ChatDemo : MonoBehaviour
     public ChatPanelManager chat;
     public Sprite head1;
     public Sprite head2;
-
-    private int count;
-    private List<string> message = new List<string>();
     
     void Start()
     {
@@ -17,28 +14,46 @@ public class ChatDemo : MonoBehaviour
         chat.SetHead(head1, true);
         chat.SetHead(head2, false);
         chat.SetTitle("慢慢来");
-        message.Add("永恒之星");
-        message.Add("永恒之星永恒之星");
-        message.Add("永恒之星永恒之星永恒之星");
-        message.Add("永恒之星永恒之星永恒之星永恒之星");
-        message.Add("永恒之星永恒之星永恒之星永恒之星永恒之星");
-        message.Add("永恒之星永恒之星永恒之星永恒之星永恒之星永恒之星");
-        message.Add("永恒之星永恒之星永恒之星永恒之星永恒之星永恒之星永恒之星");
-        message.Add("永恒之星永恒之星永恒之星永恒之星永恒之星永恒之星永恒之星");
-        message.Add("永恒之星永恒之星永恒之星永恒之星永恒之星永恒之星永恒之星永恒之星");
-        message.Add("永恒之星永恒之星永恒之星永恒之星永恒之星永恒之星永恒之星永恒之星永恒之星永恒之星永恒之星永恒之星永恒之星永恒之星永恒之星永恒之星");
+
+        chat.LoadMessage("发士大夫士大夫", false);
+        chat.LoadMessage("发士大夫士大夫", false);
+        chat.LoadMessage("发士大夫士大夫", true);
+        chat.LoadMessage("发士大夫士大夫", false);
+        chat.LoadMessage("发士大夫士大夫", true);
+        chat.LoadMessage("发士大夫士大夫", true);
+        chat.LoadMessage("发士大夫士大夫", false);
+        chat.LoadMessage("发士大夫士大夫", false);
+        chat.LoadMessage("发士大夫士大夫", true);
+        chat.LoadMessage("发士大夫士大夫", false);
+        chat.LoadMessage("发士大夫士大夫", true);
+        chat.LoadMessage("发士大夫士大夫", false);
+        chat.LoadMessage("发士大夫士大夫", true);
+        chat.LoadMessage("发士大夫士大夫", false);
+        chat.LoadMessage("发士大夫士大夫", true);
+        chat.LoadMessage("发士大夫士大夫", false);
+        chat.LoadMessage("发士大夫士大夫", true);
+        chat.LoadMessage("发士大夫士大夫", false);
+        chat.LoadMessage("发士大夫士大夫", true);
+        chat.LoadMessage("发士大夫士大夫", false);
+        chat.LoadMessage("发士大夫士大夫", true);
+
+        chat.ReceiveMessage("警方死哦地方", 0f);
+
+        SelectData data = new SelectData();
+        data.AddSelectText("我就法律手段");
+        data.AddSelectText("囧马铃薯淀粉");
+        data.SetCallback(OnSelectItem);
+        chat.SetSelectData(data);
+        chat.SetReceiveCallback(OnReceiveMessage);
     }
- 
-    void Update()
+
+    private void OnReceiveMessage()
     {
-        if (Input.GetKeyDown(KeyCode.Space))
-        {
-           chat.AddBubble(message[count], Random.Range(0, 2) > 0);
-           count++;
-           if (count > message.Count - 1)
-           {
-               count = 0;
-           }
-        }
+        
+    }
+
+    private void OnSelectItem(int index)
+    {
+        chat.ReceiveMessage("警方死哦地方", 1.5f);
     }
 }

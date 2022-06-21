@@ -1,7 +1,9 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
- 
+using System;
+using System.Collections.Generic;
+
 public class ChatPanelManager : MonoBehaviour
 {
     public GameObject leftBubblePrefab;
@@ -9,31 +11,84 @@ public class ChatPanelManager : MonoBehaviour
  
     private ScrollRect scrollRect;
     private Scrollbar scrollbar;
-    
-    private RectTransform content;
+    public RectTransform content;
+    public Text titleText;
+    public GameObject sendField;
     private Text sendFieldText;
-    private Text titleText;
+    public Button sendButton;
+    public GameObject popup;
+    public GameObject selectItem;
+
+    private AudioSource audioSource;
+    private Queue<GameObject> selectItems = new Queue<GameObject>();
 
     private Sprite myHead;
     private Sprite otherHead;
 
     private string chatTitle;
-
     private string toSendMessage;
+
+    private SelectData selectData;
+    private int selectIndex;
  
     [SerializeField] 
     private float stepVertical; //上下两个气泡的垂直间隔
- 
     private float lastPos; //上一个气泡最下方的位置
+
+    private Action receiveCallback;
  
     public void Init()
     {
         scrollRect = GetComponentInChildren<ScrollRect>();
         scrollbar = GetComponentInChildren<Scrollbar>();
-        content = transform.Find("Viewport/Content").GetComponent<RectTransform>();
-        titleText = transform.Find("Header/Text").GetComponent<Text>();
-        sendFieldText = transform.Find("Footer/InputField/Text").GetComponent<Text>();
+        sendFieldText = sendField.GetComponentInChildren<Text>();
+        sendField.GetComponent<Button>().onClick.AddListener(OnInputFieldClick);
+        sendButton.onClick.AddListener(OnSendClick);
+        audioSource = GetComponent<AudioSource>();
         lastPos = 0;
+    }
+
+    private void OnSendClick()
+    {
+        if(string.IsNullOrEmpty(toSendMessage))
+        {
+            return;
+        }
+        SendMessage();
+        CallOnSelect();
+    }
+
+    void CallOnSelect()
+    {
+        selectData.OnSelect(selectIndex);
+    }
+
+    private void OnInputFieldClick()
+    {
+        popup.SetActive(true);
+        string[] selectTexts = selectData.GetSelectTexts();
+        for(int i = 0; i < selectTexts.Length; i++)
+        {
+            int index = i;
+            var newItem = Instantiate(selectItem, popup.transform);
+            newItem.GetComponent<Button>().onClick.AddListener(() => OnSelectItem(index));
+            newItem.GetComponentInChildren<Text>().text = selectTexts[i];
+            newItem.SetActive(true);
+            selectItems.Enqueue(newItem);
+        }
+    }
+
+    private void OnSelectItem(int index)
+    {
+        while(selectItems.Count > 0)
+        {
+            var item = selectItems.Dequeue();
+            GameObject.Destroy(item);
+        }
+        popup.SetActive(false);
+        Debug.Log(index);
+        AddMessageText(selectData.GetSelectText(index));
+        selectIndex = index;
     }
 
     public void SetTitle(string title)
@@ -54,19 +109,64 @@ public class ChatPanelManager : MonoBehaviour
         }
     }
 
-    public void AddMessage(string message)
+    public void SetSelectData(SelectData data)
     {
+        this.selectData = data;
+    }
+
+    private void AddMessageText(string message)
+    {
+        if(string.IsNullOrEmpty(message))
+        {
+            return;
+        }
         toSendMessage = message;
         sendFieldText.text = message;
     }
 
-    public void SendMessage()
+    private void SendMessage()
     {
         AddBubble(toSendMessage, true);
+        toSendMessage = null;
         sendFieldText.text = null;
     }
+
+    public void SetReceiveCallback(Action callback)
+    {
+        receiveCallback = callback;
+    }
+
+    public void LoadMessage(string message, bool isMy)
+    {
+        AddBubble(message, isMy);
+    }
+
+    public void ReceiveMessage(string message, float delay)
+    {
+        if(string.IsNullOrEmpty(message))
+        {
+            return;
+        }
+        StartCoroutine(WaitReceiveMessage(message, delay));
+    }
+
+    IEnumerator WaitReceiveMessage(string message, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        AddBubble(message, false);
+        PlayNewMessageAudio();
+        if(receiveCallback != null)
+        {
+            receiveCallback();
+        }
+    }
+
+    private void PlayNewMessageAudio()
+    {
+        audioSource.Play();
+    }
  
-    public void AddBubble(string message, bool isMy)
+    private void AddBubble(string message, bool isMy)
     {
         GameObject newBubble = isMy ? Instantiate(rightBubblePrefab, content) : Instantiate(leftBubblePrefab, content);
         //设置气泡内容
@@ -86,15 +186,16 @@ public class ChatPanelManager : MonoBehaviour
         RectTransform rect = newBubble.GetComponent<RectTransform>();
         rect.anchoredPosition = new Vector2(0, lastPos);
 
-        StartCoroutine(RefreshLastPos(newBubble));
+        RefreshLastPos(newBubble);
     }
 
-    IEnumerator RefreshLastPos(GameObject bubble)
+    void RefreshLastPos(GameObject bubble)
     {
-        yield return new WaitForEndOfFrame();
         Image bubbleImage = bubble.transform.Find("Bubble").GetComponentInChildren<Image>();
         RectTransform rect = bubbleImage.GetComponent<RectTransform>();
-
+        LayoutRebuilder.ForceRebuildLayoutImmediate(rect);
+        Canvas.ForceUpdateCanvases();
+        Debug.Log(rect.sizeDelta);
         lastPos -= rect.sizeDelta.y + stepVertical;
 
         //更新content的长度
@@ -104,5 +205,47 @@ public class ChatPanelManager : MonoBehaviour
         }
 
         scrollRect.verticalNormalizedPosition = 0;//使滑动条滚轮在最下方
+    }
+}
+
+public class SelectData
+{
+    private List<string> selectTexts = new List<string>();
+    private Action<int> selectCallback;
+    
+    public void AddSelectText(string text)
+    {
+        selectTexts.Add(text);
+    }
+
+    public string[] GetSelectTexts()
+    {
+        if(selectTexts == null)
+        {
+            return null;
+        }
+        return selectTexts.ToArray();
+    }
+    
+    public string GetSelectText(int index)
+    {
+        if(selectTexts == null || selectTexts.Count == 0)
+        {
+            return null;
+        }
+        return selectTexts[index];
+    }
+
+    public void SetCallback(Action<int> callback)
+    {
+        selectCallback = callback;
+    }
+
+    public void OnSelect(int index)
+    {
+        if(selectCallback != null)
+        {
+            selectCallback(index);
+        }
     }
 }
