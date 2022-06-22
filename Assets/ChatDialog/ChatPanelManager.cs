@@ -36,8 +36,41 @@ public class ChatPanelManager : MonoBehaviour
     private float lastPos; //上一个气泡最下方的位置
 
     private Action receiveCallback;
+
+    private ChatSerial chatSerial;
+    private int chatId;
  
-    public void Init()
+    void OnEnable()
+    {
+        MessageCenter.Instance.RegisterMessageCallback(OnReceiveMessage);
+    }
+
+    void OnDisable()
+    {
+        MessageCenter.Instance.UnregisterMessageCallback(OnReceiveMessage);
+    }
+
+    private void OnReceiveMessage(ChatData chatData)
+    {
+        if(chatData.id == 0)
+        {
+            AddBubble(chatData.message, true);
+        }
+        else
+        {
+            AddBubble(chatData.message, false);
+            PlayNewMessageAudio();
+        }
+        chatSerial.AddChat(chatData);
+    }
+
+    public void Init(int id)
+    {
+        InitView();
+        LoadOrCreateChat(id);
+    }
+
+    private void InitView()
     {
         scrollRect = GetComponentInChildren<ScrollRect>();
         scrollbar = GetComponentInChildren<Scrollbar>();
@@ -48,6 +81,32 @@ public class ChatPanelManager : MonoBehaviour
         lastPos = 0;
     }
 
+    private void LoadOrCreateChat(int id)
+    {
+        chatId = id;
+        ChatSerial serial = ChatManager.Instance.LoadChatSerial(id);
+        if(serial != null)
+        {
+            chatSerial = serial;
+            ChatData[] chatDatas = chatSerial.LoadAllChats();
+            foreach (var chat in chatDatas)
+            {
+                if(chat.id == 0)
+                {
+                    AddBubble(chat.message, true);
+                }
+                else
+                {
+                    AddBubble(chat.message, false);
+                }
+            }
+        }
+        else
+        {
+            chatSerial = new ChatSerial(id);
+        }
+    }
+
     private void OnSendClick()
     {
         if(string.IsNullOrEmpty(toSendMessage))
@@ -55,13 +114,13 @@ public class ChatPanelManager : MonoBehaviour
             return;
         }
         SendMessage();
-        CallOnSelect();
+        // CallOnSelect();
     }
 
-    void CallOnSelect()
-    {
-        selectData.OnSelect(selectIndex);
-    }
+    // void CallOnSelect()
+    // {
+    //     selectData.OnSelect(selectIndex);
+    // }
 
     private void OnInputFieldClick()
     {
@@ -86,33 +145,32 @@ public class ChatPanelManager : MonoBehaviour
             GameObject.Destroy(item);
         }
         popup.SetActive(false);
-        Debug.Log(index);
         AddMessageText(selectData.GetSelectText(index));
         selectIndex = index;
     }
 
-    public void SetTitle(string title)
-    {
-        chatTitle = title;
-        titleText.text = chatTitle;
-    }
+    // public void SetTitle(string title)
+    // {
+    //     chatTitle = title;
+    //     titleText.text = chatTitle;
+    // }
 
-    public void SetHead(Sprite head, bool isMy)
-    {
-        if(isMy)
-        {
-            myHead = head;
-        }
-        else
-        {
-            otherHead = head;
-        }
-    }
+    // public void SetHead(Sprite head, bool isMy)
+    // {
+    //     if(isMy)
+    //     {
+    //         myHead = head;
+    //     }
+    //     else
+    //     {
+    //         otherHead = head;
+    //     }
+    // }
 
-    public void SetSelectData(SelectData data)
-    {
-        this.selectData = data;
-    }
+    // public void SetSelectData(SelectData data)
+    // {
+    //     this.selectData = data;
+    // }
 
     private void AddMessageText(string message)
     {
@@ -126,40 +184,40 @@ public class ChatPanelManager : MonoBehaviour
 
     private void SendMessage()
     {
-        AddBubble(toSendMessage, true);
+        MessageCenter.Instance.SendMessage(new ChatData(){id = chatId, message = toSendMessage});
         toSendMessage = null;
         sendFieldText.text = null;
     }
 
-    public void SetReceiveCallback(Action callback)
-    {
-        receiveCallback = callback;
-    }
+    // public void SetReceiveCallback(Action callback)
+    // {
+    //     receiveCallback = callback;
+    // }
 
-    public void LoadMessage(string message, bool isMy)
-    {
-        AddBubble(message, isMy);
-    }
+    // public void LoadMessage(string message, bool isMy)
+    // {
+    //     AddBubble(message, isMy);
+    // }
 
-    public void ReceiveMessage(string message, float delay)
-    {
-        if(string.IsNullOrEmpty(message))
-        {
-            return;
-        }
-        StartCoroutine(WaitReceiveMessage(message, delay));
-    }
+    // public void ReceiveMessage(string message, float delay)
+    // {
+    //     if(string.IsNullOrEmpty(message))
+    //     {
+    //         return;
+    //     }
+    //     StartCoroutine(WaitReceiveMessage(message, delay));
+    // }
 
-    IEnumerator WaitReceiveMessage(string message, float delay)
-    {
-        yield return new WaitForSeconds(delay);
-        AddBubble(message, false);
-        PlayNewMessageAudio();
-        if(receiveCallback != null)
-        {
-            receiveCallback();
-        }
-    }
+    // IEnumerator WaitReceiveMessage(string message, float delay)
+    // {
+    //     yield return new WaitForSeconds(delay);
+    //     AddBubble(message, false);
+    //     PlayNewMessageAudio();
+    //     if(receiveCallback != null)
+    //     {
+    //         receiveCallback();
+    //     }
+    // }
 
     private void PlayNewMessageAudio()
     {
@@ -169,19 +227,12 @@ public class ChatPanelManager : MonoBehaviour
     private void AddBubble(string message, bool isMy)
     {
         GameObject newBubble = isMy ? Instantiate(rightBubblePrefab, content) : Instantiate(leftBubblePrefab, content);
-        //设置气泡内容
+        
         Text msgText = newBubble.transform.Find("Bubble").GetComponentInChildren<Text>();
         msgText.text = message;
 
         Image bubbleImage = newBubble.transform.Find("Head").GetComponent<Image>();
-        if(isMy)
-        {
-            bubbleImage.sprite = myHead;
-        }
-        else
-        {
-            bubbleImage.sprite = otherHead;
-        }
+        bubbleImage.sprite = isMy ? myHead : otherHead;
 
         RectTransform rect = newBubble.GetComponent<RectTransform>();
         rect.anchoredPosition = new Vector2(0, lastPos);
@@ -191,8 +242,7 @@ public class ChatPanelManager : MonoBehaviour
 
     void RefreshLastPos(GameObject bubble)
     {
-        Image bubbleImage = bubble.transform.Find("Bubble").GetComponentInChildren<Image>();
-        RectTransform rect = bubbleImage.GetComponent<RectTransform>();
+        RectTransform rect = bubble.transform.Find("Bubble").GetComponent<RectTransform>();
         LayoutRebuilder.ForceRebuildLayoutImmediate(rect);
         Canvas.ForceUpdateCanvases();
         Debug.Log(rect.sizeDelta);
@@ -236,16 +286,16 @@ public class SelectData
         return selectTexts[index];
     }
 
-    public void SetCallback(Action<int> callback)
-    {
-        selectCallback = callback;
-    }
+    // public void SetCallback(Action<int> callback)
+    // {
+    //     selectCallback = callback;
+    // }
 
-    public void OnSelect(int index)
-    {
-        if(selectCallback != null)
-        {
-            selectCallback(index);
-        }
-    }
+    // public void OnSelect(int index)
+    // {
+    //     if(selectCallback != null)
+    //     {
+    //         selectCallback(index);
+    //     }
+    // }
 }
